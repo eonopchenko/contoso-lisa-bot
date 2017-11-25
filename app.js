@@ -4,6 +4,7 @@ A simple echo bot for the Microsoft Bot Framework.
 
 var restify = require('restify');
 var builder = require('botbuilder');
+var luis = require('./controller/luisDialog');
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -48,5 +49,7 @@ var intents = new builder.IntentDialog({ recognizers: [recognizer] })
     session.send('Sorry, I did not understand \'%s\'!', session.message.text);
 });
 
-bot.dialog('/', intents);    
+bot.dialog('/', intents);
 
+// This line will call the function in your luisDialog.js file
+luis.startDialog(bot);
