@@ -11,7 +11,6 @@ exports.startDialog = function (bot) {
     bot.dialog('GetBalance', [
         function (session, args, next) {
             session.dialogData.args = args || {};
-            console.log(session.userData["username"]);
             if(!session.userData["username"]) {
                 builder.Prompts.text(session, 'It looks like we are not familiar yet. My name is Lisa. What is your user name?');
             } else {
@@ -21,7 +20,7 @@ exports.startDialog = function (bot) {
         function (session, results, next) {
             if (results.response) {
                 session.userData["username"] = results.response;
-                session.send("It's nice to meet you, " + session.userData["username"] + ".");
+                session.send("Hi, " + session.userData["username"] + "!");
             }
 
             session.send("Balance request in progress...");
@@ -201,6 +200,146 @@ exports.startDialog = function (bot) {
         matches: 'CreateAccount'
     });
 
+    bot.dialog('DeleteAccount', [
+        function (session, args, next) {
+            request({
+                headers: {
+                  'ZUMO-API-VERSION': '2.0.0',
+                  'Content-Type': 'application/json'
+                },
+                uri: 'http://contoso-lisa-mobile.azurewebsites.net/tables/CustomerTable',
+                method: 'GET'
+            }, function (error, response, body) {
+                if(error != null) {
+                    console.log('error:', error);
+                    console.log('statusCode:', response && response.statusCode);
+                    console.log('body:', body);
+                } else {
+                    var username = session.userData["username"];
+                    var id = "";
+                    var customers = JSON.parse(body);
+                    for(var index in customers) {
+                        if(customers[index].username == username) {
+                            id = customers[index].id;
+                            break;
+                        }
+                    }
+                    if(id != "") {
+                        request(
+                        {
+                            url: "http://contoso-lisa-mobile.azurewebsites.net/tables/CustomerTable/" + id,
+                            method: 'DELETE',
+                            headers: {
+                                'ZUMO-API-VERSION': '2.0.0',
+                                'Content-Type':'application/json'
+                            }
+                        }, function (error, response, body) {
+                            session.userData["username"] = undefined;
+                            session.endConversation("Account has been successfully removed!");
+                        });
+                    }
+                }
+            });
+        }
+    ]).triggerAction({
+        matches: 'DeleteAccount'
+    });
+
+    bot.dialog('UpdateAccount', [
+        function (session, args, next) {
+            session.dialogData.args = args || {};
+            session.userData["username"] = "eugene";
+            if(!session.userData["username"]) {
+                builder.Prompts.text(session, 'It looks like we are not familiar yet. My name is Lisa. What is your user name?');
+            } else {
+                next();
+            }
+        },
+        function (session, results, next) {
+            request({
+                headers: {
+                  'ZUMO-API-VERSION': '2.0.0',
+                  'Content-Type': 'application/json'
+                },
+                uri: 'http://contoso-lisa-mobile.azurewebsites.net/tables/CustomerTable',
+                method: 'GET'
+            }, function (error, response, body) {
+                if(error != null) {
+                    console.log('error:', error);
+                    console.log('statusCode:', response && response.statusCode);
+                    console.log('body:', body);
+                } else {
+                    session.conversationData["id"] = "";
+                    var username = session.userData["username"];
+                    var customers = JSON.parse(body);
+                    for(var index in customers) {
+                        if(customers[index].username == username) {
+                            session.conversationData["id"] = customers[index].id;
+                            break;
+                        }
+                    }
+                    if(session.conversationData["id"] === "") {
+
+                    } else {
+                        const choices = ['First Name', 'Last Name', 'Email', 'Telephone', 'Password', 'Birth Date'];
+                        const card = new builder.ThumbnailCard(session)
+                            .text('Please, select and option.')
+                            .title(session.userData["username"] + ', what field would you like to update?')
+                            .buttons(choices.map(choice => new builder.CardAction.imBack(session, choice, choice)));
+                        const message = new builder.Message(session)
+                            .addAttachment(card);
+                        builder.Prompts.choice(session, message, choices);
+                    }
+                }
+            });
+        }, 
+        function (session, results, next) {
+            const choices1 = ['First Name', 'Last Name', 'Email', 'Telephone', 'Password', 'Birth Date'];
+            const choices2 = ['firstname', 'lastname', 'email', 'tel', 'password', 'birthdate'];
+            session.conversationData["toupdate"] = choices2[choices1.indexOf(results.response.entity)];
+            builder.Prompts.text(session, 'Please, enter a new value of ' + results.response.entity + ":");
+        }, 
+        function (session, results, next) {
+            session.conversationData["newvalue"] = results.response;
+            if(session.conversationData["toupdate"] === "password") {
+                builder.Prompts.text(session, 'Please, confirm your account password:');
+            } else {
+                next();
+            }
+        },
+        function (session, results, next) {
+            var toupdate = session.conversationData["toupdate"];
+            var newvalue = session.conversationData["newvalue"];
+            if((toupdate === "password") && (newvalue != results.response)) {
+                session.send("Your confirmation must be the same as password.");
+                session.replaceDialog("UpdateAccount");
+            } else {
+                var data = '{"' + toupdate + '": "' + (toupdate === "password" ? md5(newvalue) : newvalue) + '"}';
+
+                request(
+                {
+                    url: "http://contoso-lisa-mobile.azurewebsites.net/tables/CustomerTable/" + session.conversationData["id"],
+                    body: data,
+                    method: 'PATCH',
+                    headers: {
+                        'ZUMO-API-VERSION': '2.0.0',
+                        'Content-Type':'application/json'
+                    }
+                }, function (error, response, body) {
+                    if(error != null) {
+                        console.log('error:', error);
+                        console.log('statusCode:', response && response.statusCode);
+                        console.log('body:', body);
+                    } else {
+                        session.endConversation("Account has been successfully updated!");
+                    }
+                });
+            }
+        }
+    ]).triggerAction({
+        matches: 'UpdateAccount'
+    });
+
     bot.dialog('GetExchangeRate', [
         function (session, args, next) {
             var sellcurrency = builder.EntityRecognizer.findEntity(args.intent.entities, 'sellcurrency');
@@ -288,8 +427,6 @@ exports.startDialog = function (bot) {
                     session.send(message);
                 }
             });
-
-
         }
     ]).triggerAction({
         matches: 'GetBranches'
