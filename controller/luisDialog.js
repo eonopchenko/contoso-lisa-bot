@@ -200,4 +200,32 @@ exports.startDialog = function (bot) {
     ]).triggerAction({
         matches: 'CreateAccount'
     });
+
+    bot.dialog('GetExchangeRate', [
+        function (session, args, next) {
+            var sellcurrency = builder.EntityRecognizer.findEntity(args.intent.entities, 'sellcurrency');
+            var buycurrency = builder.EntityRecognizer.findEntity(args.intent.entities, 'buycurrency');
+            if(sellcurrency && buycurrency) {
+                var tosell = sellcurrency.entity.toUpperCase();
+                var tobuy = buycurrency.entity.toUpperCase();
+                request({
+                    uri: 'https://api.fixer.io/latest?base=' + tosell + '&symbols=' + tobuy,
+                    method: 'GET'
+                }, function (error, response, body) {
+                    if(error != null) {
+                        console.log('error:', error);
+                        console.log('statusCode:', response && response.statusCode);
+                        console.log('body:', body);
+                    } else {
+                        var ratelist = JSON.parse(body);
+                        session.endConversation("Interbank exchange rate as of " + ratelist.date + " is " + ratelist.rates[tobuy] + " " + tobuy + " for 1 " + tosell + ".");
+                    }
+                });
+            }
+        }, 
+        function (session, results, next) {
+        }
+    ]).triggerAction({
+        matches: 'GetExchangeRate'
+    });
 }
