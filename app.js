@@ -29,10 +29,29 @@ server.post('/api/messages', connector.listen());
 
 // Create your bot with a function to receive messages from the user
 var bot = new builder.UniversalBot(connector, function (session) {
-    session.send('Sorry, I did not understand \'%s\'. Type \'help\' if you need assistance.', session.message.text);
+        var welcomeCard = new builder.HeroCard(session)
+            .title('Welcome to Contoso Bank Chatbot')
+            .images([
+                new builder.CardImage(session)
+                    .url('https://placeholdit.imgix.net/~text?txtsize=56&txt=Contoso%20Bank&w=640&h=330')
+            ]);
+    
+        session.send(new builder.Message(session).addAttachment(welcomeCard));
+        session.send('Hi, my name is Lisa!');
 });
 
 bot.set('persistConversationData', true);
+
+// Send welcome when conversation with bot is started, by initiating the root dialog
+bot.on('conversationUpdate', function (message) {
+    if (message.membersAdded) {
+        message.membersAdded.forEach(function (identity) {
+            if (identity.id === message.address.bot.id) {
+                bot.beginDialog(message.address, '/');
+            }
+        });
+    }
+});
 
 // This line will call the function in your luisDialog.js file
 luis.startDialog(bot);
