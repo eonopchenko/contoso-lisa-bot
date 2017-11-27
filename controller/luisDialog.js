@@ -218,6 +218,22 @@ exports.startDialog = function (bot) {
                         console.log('body:', body);
                     } else {
                         var ratelist = JSON.parse(body);
+                        var attachment = [];
+                        attachment.push(
+                            new builder.ThumbnailCard(session)
+                            .title(tosell)
+                            .text("1 " + tosell + " = " + ratelist.rates[tobuy] + " " + tobuy)
+                            .images([builder.CardImage.create(session, "http://fxtop.com/ico/" + sellcurrency.entity.toLowerCase() + ".gif")])
+                        );
+                        attachment.push(
+                            new builder.ThumbnailCard(session)
+                            .text("1 " + tobuy + " = " + (1 / ratelist.rates[tobuy]).toFixed(4) + " " + tosell)
+                            .images([builder.CardImage.create(session, "http://fxtop.com/ico/" + buycurrency.entity.toLowerCase() + ".gif")])
+                        );
+                        var message = new builder.Message(session)
+                            .attachmentLayout(builder.AttachmentLayout.carousel)
+                            .attachments(attachment);
+                        session.send(message);
                         session.endConversation("Interbank exchange rate as of " + ratelist.date + " is " + ratelist.rates[tobuy] + " " + tobuy + " for 1 " + tosell + ".");
                     }
                 });
