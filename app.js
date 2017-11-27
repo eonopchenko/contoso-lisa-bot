@@ -32,5 +32,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     session.send('Sorry, I did not understand \'%s\'. Type \'help\' if you need assistance.', session.message.text);
 });
 
+bot.set('persistConversationData', true);
+
 // This line will call the function in your luisDialog.js file
 luis.startDialog(bot);
