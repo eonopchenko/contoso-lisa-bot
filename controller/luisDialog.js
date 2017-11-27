@@ -238,10 +238,60 @@ exports.startDialog = function (bot) {
                     }
                 });
             }
-        }, 
-        function (session, results, next) {
         }
     ]).triggerAction({
         matches: 'GetExchangeRate'
+    });
+    
+    bot.dialog('GetBranches', [
+        function (session, args, next) {
+            request({
+                headers: {
+                    'ZUMO-API-VERSION': '2.0.0',
+                    'Content-Type': 'application/json'
+                },
+                uri: 'http://contoso-lisa-mobile.azurewebsites.net/tables/BranchTable',
+                method: 'GET'
+            }, function (error, response, body) {
+                if(error != null) {
+                    console.log('error:', error);
+                    console.log('statusCode:', response && response.statusCode);
+                    console.log('body:', body);
+                } else {
+                    var attachment = [];
+                    var branches = JSON.parse(body);
+                    for(var index in branches) {
+                        var lat = parseFloat(branches[index].lat);
+                        var lng = parseFloat(branches[index].lng);
+                        var leftlat = lat - 0.0011241;
+                        var rightlat = lat + 0.0011242;
+                        var leftlng = lng - 0.0016354;
+                        var rightlng = lng + 0.0016355;
+                        attachment.push(
+                            new builder.HeroCard(session)
+                            .title(branches[index].name)
+                            .subtitle(branches[index].tel)
+                            .text(branches[index].address)
+                            .images([builder.CardImage.create(session, 
+                                "https://dev.virtualearth.net/REST/V1/Imagery/Map/Road?mapArea=" + 
+                                leftlat + "," + leftlng + "," + rightlat + "," + rightlng + 
+                                "&mapSize=500,280&pp=" + 
+                                lat + "," + lng + 
+                                ";1;&dpi=1&logo=always&form=BTCTRL&key=Ag42Z8GVwTQmXxTMCJiuvJyBmTZWSE46waBG1rdXHpclnbPtMBpYGdAdN4CXTtlH")])
+                            .buttons([
+                                builder.CardAction.openUrl(session, "https://www.google.com/maps/place/" + branches[index].address, 'Open Google Map')])
+                        );
+                    }
+                    var message = new builder.Message(session)
+                    .attachmentLayout(builder.AttachmentLayout.carousel)
+                    .attachments(attachment);
+                    session.send(message);
+                }
+            });
+
+
+        }
+    ]).triggerAction({
+        matches: 'GetBranches'
     });
 }
