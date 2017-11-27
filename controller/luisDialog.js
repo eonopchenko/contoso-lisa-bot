@@ -436,6 +436,7 @@ exports.startDialog = function (bot) {
                         );
                         attachment.push(
                             new builder.ThumbnailCard(session)
+                            .title(tobuy)
                             .text("1 " + tobuy + " = " + (1 / ratelist.rates[tobuy]).toFixed(4) + " " + tosell)
                             .images([builder.CardImage.create(session, "http://fxtop.com/ico/" + buycurrency.entity.toLowerCase() + ".gif")])
                         );
