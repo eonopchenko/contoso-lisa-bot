@@ -5,6 +5,17 @@ var account = require('./account.js');
 var branch = require('./branch.js');
 var currency = require('./currency.js');
 
+var username = '';
+var password = '';
+
+exports.setUsername = function(data) {
+    username = data;
+}
+
+exports.setPassword = function(data) {
+    password = data;
+}
+
 const optionsFull = ['First Name', 'Last Name', 'Email', 'Telephone', 'Password', 'Birth Date'];
 const optionsBrief = ['firstname', 'lastname', 'email', 'tel', 'password', 'birthdate'];
 
@@ -29,7 +40,7 @@ function isConversationDataSet(session, id) {
 
 function buildNewAccountJSON(session) {
     return '{' + 
-    '"username": "' + session.userData["username"] + '",' + 
+    '"username": "' + username + '",' + 
     '"firstname": "' + session.conversationData["firstname"] + '",' + 
     '"lastname": "' + session.conversationData["lastname"] + '",' + 
     '"email": "' + session.conversationData["email"] + '",' + 
@@ -48,25 +59,29 @@ exports.startDialog = function (bot) {
     bot.dialog('Welcome', [
         function (session, args, next) {
             session.dialogData.args = args || {};
-            if(!isUserDataSet(session, "username")) {
+            if(username === '') {
                 builder.Prompts.text(session, 'Please, enter your user name:');
             } else {
-                session.send('Welcome back, ' + session.userData["username"] + '.');
-                next();
+                session.send('Welcome back, ' + username + '.');
+                if(password === '') {
+                    next();
+                } else {
+                    session.endConversation('Great, what to do next?');
+                }
             }
         },
         function (session, results, next) {
             if (results.response) {
-                session.userData["username"] = results.response;
+                username = results.response;
             }
 
             session.sendTyping();
 
-            account.getPassword(session.userData["username"], function (error, password) {
+            account.getPassword(username, function (error, pwd) {
                 if (error) {
                 } else {
-                    if(password != "") {
-                        session.userData["password"] = password;
+                    if(pwd !== '') {
+                        password = pwd;
                         builder.Prompts.text(session, 'Please, enter your account password:');
                     } else {
                         choiceRequest(
@@ -84,8 +99,8 @@ exports.startDialog = function (bot) {
                     session.replaceDialog('CreateAccount');
                 }
             } else {
-                if (session.userData["password"] === md5(results.response)) {
-                    session.send('Great, what to do next?');
+                if (password === md5(results.response)) {
+                    session.endConversation('Great, what to do next?');
                 } else {
                     session.send('Sorry, but it seems like the entered password is incorrect. Please, try once again.');
                     session.replaceDialog('Welcome');
@@ -101,7 +116,7 @@ exports.startDialog = function (bot) {
 
             session.sendTyping();
 
-            account.getBalance(session.userData["username"], function (error, balance) {
+            account.getBalance(username, function (error, balance) {
                 if (error) {
                 } else {
                     if(balance == -1) {
@@ -111,7 +126,7 @@ exports.startDialog = function (bot) {
                             'Sorry, no account information has been found.', 
                             'Do you want to create a new account?');
                     } else {
-                        session.endConversation(session.userData["username"] + ", your balance is $" + balance + ".");
+                        session.endConversation(username + ", your balance is $" + balance + ".");
                     }
                 }
             });
@@ -130,15 +145,15 @@ exports.startDialog = function (bot) {
 
     bot.dialog('CreateAccount', [
         function (session, args, next) {
-            if (!isUserDataSet(session, "username")) {
+            if (username === '') {
                 builder.Prompts.text(session, 'Please, enter your user name:');
             } else {
                 next();
             }
         },
         function (session, results, next) {
-            if(!isUserDataSet(session, "username")) {
-                session.userData["username"] = results.response;
+            if(username === '') {
+                username = results.response;
             }
             if(!isConversationDataSet(session, "firstname")) {
                 builder.Prompts.text(session, 'Please, enter your first name:');
@@ -228,8 +243,8 @@ exports.startDialog = function (bot) {
                 if(error) {
                     session.endConversation("Error occurred during account creation!");
                 } else {
-                    session.userData["password"] = md5(session.conversationData["password1"]);
-                    session.endConversation(session.userData["username"] + ", your account has been successfully created!");
+                    password = md5(session.conversationData["password1"]);
+                    session.endConversation(username + ", your account has been successfully created!");
                 }
             });
         }
@@ -242,13 +257,13 @@ exports.startDialog = function (bot) {
 
             session.sendTyping();
 
-            account.deleteAccount(session.userData["username"], function (error, id) {
+            account.deleteAccount(username, function (error, id) {
                 if(error) {
                     session.endConversation("Error occurred during account deletion!");
                 } else {
-                    session.userData["username"] = "";
-                    session.userData["password"] = "";
-                    session.endConversation(session.userData["username"] + ", your account has been successfully removed!");
+                    session.endConversation(username + ", your account has been successfully removed!");
+                    username = '';
+                    password = '';
                 }
             });
         }
@@ -261,14 +276,14 @@ exports.startDialog = function (bot) {
 
             session.sendTyping();
 
-            account.getId(session.userData["username"], function (error, id) {
+            account.getId(username, function (error, id) {
                 if (error) {
                 } else {
                     session.conversationData["id"] = id;
                     choiceRequest(
                         session, 
                         optionsFull, 
-                        session.userData["username"] + ', what field would you like to update?', 
+                        username + ', what field would you like to update?', 
                         'Do you want to create a new account?');
                 }
             });
@@ -295,7 +310,7 @@ exports.startDialog = function (bot) {
                 account.update(session.conversationData["id"], '{"' + toupdate + '": "' + (toupdate === "password" ? md5(newvalue) : newvalue) + '"}', function (error) {
                     if (error) {
                     } else {
-                        session.endConversation(session.userData["username"] + ", your account has been successfully updated!");
+                        session.endConversation(username + ", your account has been successfully updated!");
                     }
                 });
                 

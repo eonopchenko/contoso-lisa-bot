@@ -4,28 +4,7 @@ A simple echo bot for the Microsoft Bot Framework.
 
 var restify = require('restify');
 var builder = require('botbuilder');
-const express = require("express");
-const session = require("express-session");
-// const helmet = require("helmet");
-// const express_enforces_ssl = require("express-enforces-ssl");
-const app = express();
 var luis = require('./controller/luisDialog');
-
-// app.use(helmet());
-// app.use(helmet.noCache());
-// app.enable("trust proxy");
-// app.use(express_enforces_ssl());
-
-app.use(session({
-  secret: "123456",
-  resave: true,
-  saveUninitialized: true,
-  proxy: true,
-  cookie: {
-    httpOnly: true,
-    secure: false
-  }
-}));
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -57,6 +36,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
     if (text !== '') {
         try {
             var credentials = JSON.parse(text);
+            luis.setUsername(credentials.username);
+            luis.setPassword(credentials.password);
         } catch(e) {
             
         }
