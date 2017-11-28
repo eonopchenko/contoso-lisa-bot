@@ -2,6 +2,8 @@ var builder = require('botbuilder');
 var request = require('request');
 var md5 = require('MD5');
 var account = require('./account.js');
+var branch = require('./branch.js');
+var currency = require('./currency.js');
 
 const optionsFull = ['First Name', 'Last Name', 'Email', 'Telephone', 'Password', 'Birth Date'];
 const optionsBrief = ['firstname', 'lastname', 'email', 'tel', 'password', 'birthdate'];
@@ -314,36 +316,29 @@ exports.startDialog = function (bot) {
             if(sellcurrency && buycurrency) {
                 var tosell = sellcurrency.entity.toUpperCase();
                 var tobuy = buycurrency.entity.toUpperCase();
-                request({
-                    uri: 'https://api.fixer.io/latest?base=' + tosell + '&symbols=' + tobuy,
-                    method: 'GET'
-                }, function (error, response, body) {
-                    if(error != null) {
-                        console.log('error:', error);
-                        console.log('statusCode:', response && response.statusCode);
-                        console.log('body:', body);
-                    } else {
-                        var ratelist = JSON.parse(body);
-                        var attachment = [];
-                        attachment.push(
-                            new builder.ThumbnailCard(session)
-                            .title(tosell)
-                            .text("1 " + tosell + " = " + ratelist.rates[tobuy] + " " + tobuy)
-                            .images([builder.CardImage.create(session, "http://fxtop.com/ico/" + sellcurrency.entity.toLowerCase() + ".gif")])
-                        );
-                        attachment.push(
-                            new builder.ThumbnailCard(session)
-                            .title(tobuy)
-                            .text("1 " + tobuy + " = " + (1 / ratelist.rates[tobuy]).toFixed(4) + " " + tosell)
-                            .images([builder.CardImage.create(session, "http://fxtop.com/ico/" + buycurrency.entity.toLowerCase() + ".gif")])
-                        );
-                        var message = new builder.Message(session)
-                            .attachmentLayout(builder.AttachmentLayout.carousel)
-                            .attachments(attachment);
-                        session.send(message);
-                        session.endConversation("Interbank exchange rate as of " + ratelist.date + " is " + ratelist.rates[tobuy] + " " + tobuy + " for 1 " + tosell + ".");
-                    }
+                currency.getExchangeRate(tosell, tobuy, function (error, data) {
+                    var ratelist = JSON.parse(data);
+                    var attachment = [];
+                    attachment.push(
+                        new builder.ThumbnailCard(session)
+                        .title(tosell)
+                        .text("1 " + tosell + " = " + ratelist.rates[tobuy] + " " + tobuy)
+                        .images([builder.CardImage.create(session, "http://fxtop.com/ico/" + sellcurrency.entity.toLowerCase() + ".gif")])
+                    );
+                    attachment.push(
+                        new builder.ThumbnailCard(session)
+                        .title(tobuy)
+                        .text("1 " + tobuy + " = " + (1 / ratelist.rates[tobuy]).toFixed(4) + " " + tosell)
+                        .images([builder.CardImage.create(session, "http://fxtop.com/ico/" + buycurrency.entity.toLowerCase() + ".gif")])
+                    );
+                    var message = new builder.Message(session)
+                        .attachmentLayout(builder.AttachmentLayout.carousel)
+                        .attachments(attachment);
+                    session.send(message);
+                    session.endConversation("Interbank exchange rate as of " + ratelist.date + " is " + ratelist.rates[tobuy] + " " + tobuy + " for 1 " + tosell + ".");
                 });
+            } else {
+                session.endConversation("Sorry, currency not recognized!");
             }
         }
     ]).triggerAction({
@@ -352,21 +347,11 @@ exports.startDialog = function (bot) {
     
     bot.dialog('GetBranches', [
         function (session, args, next) {
-            request({
-                headers: {
-                    'ZUMO-API-VERSION': '2.0.0',
-                    'Content-Type': 'application/json'
-                },
-                uri: 'http://contoso-lisa-mobile.azurewebsites.net/tables/BranchTable',
-                method: 'GET'
-            }, function (error, response, body) {
-                if(error != null) {
-                    console.log('error:', error);
-                    console.log('statusCode:', response && response.statusCode);
-                    console.log('body:', body);
+            branch.getList(function (error, data) {
+                if (error) {
                 } else {
                     var attachment = [];
-                    var branches = JSON.parse(body);
+                    var branches = JSON.parse(data);
                     for(var index in branches) {
                         var lat = parseFloat(branches[index].lat);
                         var lng = parseFloat(branches[index].lng);

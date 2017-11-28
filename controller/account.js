@@ -1,4 +1,5 @@
-var rest = require('../api/restclient.js');
+var rest = require('../api/restClient.js');
+
 const url = 'http://contoso-lisa-mobile.azurewebsites.net/tables/CustomerTable';
 
 /**
@@ -7,7 +8,7 @@ const url = 'http://contoso-lisa-mobile.azurewebsites.net/tables/CustomerTable';
  * @param[in]  callback  
  */
 exports.getBalance = function (username, callback) {
-    rest.httpGetCustomers(url, function (error, body) {
+    rest.httpGet(url, function (error, body) {
         if (error) {
             callback(error, -1);
         } else {
@@ -25,7 +26,7 @@ exports.getBalance = function (username, callback) {
 };
 
 exports.getPassword = function (username, callback) {
-    rest.httpGetCustomers(url, function (error, body) {
+    rest.httpGet(url, function (error, body) {
         if (error) {
             callback(error, "");
         } else {
@@ -43,7 +44,7 @@ exports.getPassword = function (username, callback) {
 };
 
 exports.getId = function (username, callback) {
-    rest.httpGetCustomers(url, function (error, body) {
+    rest.httpGet(url, function (error, body) {
         if (error) {
             callback(error, "");
         } else {
@@ -61,13 +62,13 @@ exports.getId = function (username, callback) {
 };
 
 exports.create = function (data, callback) {
-    rest.httpPostCustomers(url, data, function (error) {
+    rest.httpPost(url, data, function (error) {
         callback(error);
     });
 };
 
 exports.delete = function (username, callback) {
-    rest.httpGetCustomers(url, function (error, body) {
+    rest.httpGet(url, function (error, body) {
         if (error) {
             callback(error, "");
         } else {
@@ -91,7 +92,7 @@ exports.delete = function (username, callback) {
 };
 
 exports.update = function (id, data, callback) {
-    rest.httpPatchCustomers(url + '/' + id, data, function (error) {
+    rest.httpPatch(url + '/' + id, data, function (error) {
         callback(error);
     })
 };

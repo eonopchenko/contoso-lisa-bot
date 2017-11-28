@@ -1,6 +1,6 @@
 var request = require('request');
 
-exports.httpGetCustomers = function (url, callback) {
+exports.httpGetAzure = function (url, callback) {
     request({
         headers: {
             'ZUMO-API-VERSION': '2.0.0',
@@ -19,7 +19,7 @@ exports.httpGetCustomers = function (url, callback) {
     });
 };
 
-exports.httpPostCustomers = function (url, data, callback) {
+exports.httpPostAzure = function (url, data, callback) {
     request({
         headers: {
             'ZUMO-API-VERSION': '2.0.0',
@@ -39,7 +39,7 @@ exports.httpPostCustomers = function (url, data, callback) {
     });
 };
 
-exports.httpDeleteCustomers = function (url, callback) {
+exports.httpDeleteAzure = function (url, callback) {
     request(
         {
             headers: {
@@ -59,16 +59,16 @@ exports.httpDeleteCustomers = function (url, callback) {
         });
 };
 
-exports.httpPatchCustomers = function (url, data, callback) {
+exports.httpPatchAzure = function (url, data, callback) {
     request(
     {
-        url: url,
-        body: data,
-        method: 'PATCH',
         headers: {
             'ZUMO-API-VERSION': '2.0.0',
             'Content-Type':'application/json'
-        }
+        },
+        url: url,
+        body: data,
+        method: 'PATCH'
     }, function (error, response, body) {
         if (error) {
             console.log('error:', error);
@@ -78,4 +78,19 @@ exports.httpPatchCustomers = function (url, data, callback) {
 
         callback(error);
     });
+};
+
+exports.httpGet = function (url, callback) {
+    request({
+        url: url,
+        method: 'GET'
+    }, function (error, response, body) {
+        if (error) {
+            console.log('error:', error);
+            console.log('statusCode:', response && response.statusCode);
+            console.log('body:', body);
+        }
+
+        callback(error, body);
+    })
 };
