@@ -8,7 +8,7 @@ const url = 'http://contoso-lisa-mobile.azurewebsites.net/tables/CustomerTable';
  * @param[in]  callback  
  */
 exports.getBalance = function (username, callback) {
-    rest.httpGet(url, function (error, body) {
+    rest.httpGetAzure(url, function (error, body) {
         if (error) {
             callback(error, -1);
         } else {
@@ -26,7 +26,7 @@ exports.getBalance = function (username, callback) {
 };
 
 exports.getPassword = function (username, callback) {
-    rest.httpGet(url, function (error, body) {
+    rest.httpGetAzure(url, function (error, body) {
         if (error) {
             callback(error, "");
         } else {
@@ -44,7 +44,7 @@ exports.getPassword = function (username, callback) {
 };
 
 exports.getId = function (username, callback) {
-    rest.httpGet(url, function (error, body) {
+    rest.httpGetAzure(url, function (error, body) {
         if (error) {
             callback(error, "");
         } else {
@@ -62,13 +62,13 @@ exports.getId = function (username, callback) {
 };
 
 exports.create = function (data, callback) {
-    rest.httpPost(url, data, function (error) {
+    rest.httpPostAzure(url, data, function (error) {
         callback(error);
     });
 };
 
 exports.delete = function (username, callback) {
-    rest.httpGet(url, function (error, body) {
+    rest.httpGetAzure(url, function (error, body) {
         if (error) {
             callback(error, "");
         } else {
@@ -83,7 +83,7 @@ exports.delete = function (username, callback) {
             if(id == "") {
                 callback(error, id);
             } else {
-                rest.httpDeleteCustomers(url + '/' + id, function (error) {
+                rest.httpDeleteAzure(url + '/' + id, function (error) {
                     callback(error, id);
                 });
             }
@@ -92,7 +92,7 @@ exports.delete = function (username, callback) {
 };
 
 exports.update = function (id, data, callback) {
-    rest.httpPatch(url + '/' + id, data, function (error) {
+    rest.httpPatchAzure(url + '/' + id, data, function (error) {
         callback(error);
     })
 };
