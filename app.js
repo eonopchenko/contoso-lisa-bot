@@ -27,30 +27,34 @@ server.post('/api/messages', connector.listen());
 * For samples and documentation, see: https://github.com/Microsoft/BotBuilder-Azure
 * ---------------------------------------------------------------------------------------- */
 
+var instructions = 'Welcome!';
+
 // Create your bot with a function to receive messages from the user
 var bot = new builder.UniversalBot(connector, function (session) {
-
-    if ((session.userData["username"] != null) && (session.userData["username"] != undefined) && (session.userData["username"] != "")) {
-        session.send('Welcome back, ' + session.userData["username"] + '.');
-    } else {
-        var welcomeCard = new builder.HeroCard(session)
-        .title('Welcome to Contoso Bank Chatbot')
-        .images([
-            new builder.CardImage(session)
-            .url('https://placeholdit.imgix.net/~text?txtsize=56&txt=Contoso%20Bank&w=640&h=330')
-        ]);
-
-        session.send(new builder.Message(session).addAttachment(welcomeCard));
-        session.send('Hi, my name is Lisa!');
+    var reply = new builder.Message().address(session.message.address);
+    var text = session.message.text;
+    if (text !== '') {
+        try {
+            var credentials = JSON.parse(text);
+        } catch(e) {
+            
+        }
     }
+    
+    session.send(reply);
 });
 
+bot.set('persistUserData', true);
+
 // Send welcome when conversation with bot is started, by initiating the root dialog
-bot.on('conversationUpdate', function (message) {
-    if (message.membersAdded) {
-        message.membersAdded.forEach(function (identity) {
-            if (identity.id === message.address.bot.id) {
-                bot.beginDialog(message.address, '/');
+bot.on('conversationUpdate', function (activity) {
+    if (activity.membersAdded) {
+        activity.membersAdded.forEach(function (identity) {
+            if (identity.id === activity.address.bot.id) {
+                var reply = new builder.Message()
+                    .address(activity.address)
+                    .text(instructions);
+                bot.send(reply);
             }
         });
     }
