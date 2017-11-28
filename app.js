@@ -40,8 +40,6 @@ var bot = new builder.UniversalBot(connector, function (session) {
         session.send('Hi, my name is Lisa!');
 });
 
-bot.set('persistConversationData', true);
-
 // Send welcome when conversation with bot is started, by initiating the root dialog
 bot.on('conversationUpdate', function (message) {
     if (message.membersAdded) {
