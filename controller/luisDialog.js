@@ -60,7 +60,7 @@ exports.startDialog = function (bot) {
                 session.userData["username"] = results.response;
             }
 
-            session.send("Account data request in progress...");
+            session.sendTyping();
 
             account.getPassword(session.userData["username"], function (error, password) {
                 if (error) {
@@ -98,20 +98,8 @@ exports.startDialog = function (bot) {
 
     bot.dialog('GetBalance', [
         function (session, args, next) {
-            session.dialogData.args = args || {};
-            if(!session.userData["username"]) {
-                builder.Prompts.text(session, 'Please, enter your user name:');
-            } else {
-                next();
-            }
-        },
-        function (session, results, next) {
-            if (results.response) {
-                session.userData["username"] = results.response;
-                session.send("Hi, " + session.userData["username"] + "!");
-            }
 
-            session.send("Balance request in progress...");
+            session.sendTyping();
 
             account.getBalance(session.userData["username"], function (error, balance) {
                 if (error) {
@@ -234,6 +222,8 @@ exports.startDialog = function (bot) {
                 session.conversationData["birthdate"] = results.response;
             }
 
+            session.sendTyping();
+
             account.create(buildNewAccountJSON(session), function (error) {
                 if(error) {
                     session.endConversation("Error occurred during account creation!");
@@ -249,6 +239,9 @@ exports.startDialog = function (bot) {
 
     bot.dialog('DeleteAccount', [
         function (session, args, next) {
+
+            session.sendTyping();
+
             account.deleteAccount(session.userData["username"], function (error, id) {
                 if(error) {
                     session.endConversation("Error occurred during account deletion!");
@@ -265,6 +258,9 @@ exports.startDialog = function (bot) {
 
     bot.dialog('UpdateAccount', [
         function (session, args, next) {
+
+            session.sendTyping();
+
             account.getId(session.userData["username"], function (error, id) {
                 if (error) {
                 } else {
@@ -316,6 +312,9 @@ exports.startDialog = function (bot) {
             if(sellcurrency && buycurrency) {
                 var tosell = sellcurrency.entity.toUpperCase();
                 var tobuy = buycurrency.entity.toUpperCase();
+
+                session.sendTyping();
+
                 currency.getExchangeRate(tosell, tobuy, function (error, data) {
                     var ratelist = JSON.parse(data);
                     var attachment = [];
@@ -347,6 +346,9 @@ exports.startDialog = function (bot) {
     
     bot.dialog('GetBranches', [
         function (session, args, next) {
+
+            session.sendTyping();
+
             branch.getList(function (error, data) {
                 if (error) {
                 } else {
