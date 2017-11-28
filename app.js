@@ -29,15 +29,20 @@ server.post('/api/messages', connector.listen());
 
 // Create your bot with a function to receive messages from the user
 var bot = new builder.UniversalBot(connector, function (session) {
+
+    if ((session.userData["username"] != null) && (session.userData["username"] != undefined) && (session.userData["username"] != "")) {
+        session.send('Welcome back, ' + session.userData["username"] + '.');
+    } else {
         var welcomeCard = new builder.HeroCard(session)
-            .title('Welcome to Contoso Bank Chatbot')
-            .images([
-                new builder.CardImage(session)
-                    .url('https://placeholdit.imgix.net/~text?txtsize=56&txt=Contoso%20Bank&w=640&h=330')
-            ]);
-    
+        .title('Welcome to Contoso Bank Chatbot')
+        .images([
+            new builder.CardImage(session)
+            .url('https://placeholdit.imgix.net/~text?txtsize=56&txt=Contoso%20Bank&w=640&h=330')
+        ]);
+
         session.send(new builder.Message(session).addAttachment(welcomeCard));
         session.send('Hi, my name is Lisa!');
+    }
 });
 
 // Send welcome when conversation with bot is started, by initiating the root dialog

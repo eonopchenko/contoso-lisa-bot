@@ -51,7 +51,7 @@ exports.startDialog = function (bot) {
             if(!isUserDataSet(session, "username")) {
                 builder.Prompts.text(session, 'Please, enter your user name:');
             } else {
-                session.send('Welcome back, ' + session.userData["username"]);
+                session.send('Welcome back, ' + session.userData["username"] + '.');
                 next();
             }
         },
