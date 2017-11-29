@@ -62,7 +62,11 @@ function buildNewAccountJSON(session) {
 
 exports.startDialog = function (bot) {
 
+    /// account 1
     var recognizer = new builder.LuisRecognizer('https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/d3b35771-e7bd-46fb-83c3-d58c28897e26?subscription-key=81c2b5daa58b4f9fa8a5e7ff4d5591a7&timezoneOffset=0&q=');
+
+    /// account 2
+    // var recognizer = new builder.LuisRecognizer('https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/7179ca69-dcdd-4770-9cec-aa5638d5593b?subscription-key=3f2cc62c7fd444af9b8e0129378c3276&verbose=true&timezoneOffset=0&q=');
 
     bot.recognizer(recognizer);
 
