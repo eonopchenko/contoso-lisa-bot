@@ -505,7 +505,7 @@ exports.startDialog = function (bot) {
             cvision.recognizeBanknote(results.response, function (error, body) {
                 if (error) {
                 } else if (body && body.Predictions && body.Predictions[0].Tag) {
-                    var message = 'This is ' + body.Predictions[0].Tag;
+                    var message = 'This is ' + body.Predictions[0].Tag + '.';
                     if (isVoiceOn(session)) tts.Synthesize(message);
                     session.endConversation(message);
                 }
