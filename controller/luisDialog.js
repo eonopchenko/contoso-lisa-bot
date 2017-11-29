@@ -4,7 +4,8 @@ var md5 = require('MD5');
 var account = require('./account.js');
 var branch = require('./branch.js');
 var currency = require('./currency.js');
-var tts = require('./TTSService.js');  
+var tts = require('./TTSService.js');
+var cvision = require('./customVision.js');
 
 var username = '';
 var password = '';
@@ -493,7 +494,27 @@ exports.startDialog = function (bot) {
     ]).triggerAction({
         matches: 'GetBranches'
     });
-    
+
+    bot.dialog('RecognizeBanknote', [
+        function (session, args, next) {
+            var message = 'Enter banknote image url:';
+            if (isVoiceOn(session)) tts.Synthesize(message);
+            builder.Prompts.text(session, message);
+        }, 
+        function (session, results, next) {
+            cvision.recognizeBanknote(results.response, function (error, body) {
+                if (error) {
+                } else if (body && body.Predictions && body.Predictions[0].Tag) {
+                    var message = 'This is ' + body.Predictions[0].Tag;
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.endConversation(message);
+                }
+            });
+        }
+    ]).triggerAction({
+        matches: 'RecognizeBanknote'
+    });
+
     bot.dialog('Cancel', [
         function (session, args, next) {
             var message = 'Great, what to do next?';

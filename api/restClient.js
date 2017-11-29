@@ -94,3 +94,21 @@ exports.httpGet = function (url, callback) {
         callback(error, body);
     })
 };
+
+exports.httpPost = function (url, headers, body, callback) {
+    request({
+        uri: url,
+        json: true,
+        headers: headers,
+        body: body,
+        method: 'POST'
+    }, function (error, response, body) {
+        if (error) {
+            console.log('error:', error);
+            console.log('statusCode:', response && response.statusCode);
+            console.log('body:', body);
+        }
+
+        callback(error, body);
+    })
+};
