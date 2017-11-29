@@ -186,7 +186,7 @@ exports.startDialog = function (bot) {
             if(results.response.entity === 'Yes') {
                 session.replaceDialog("CreateAccount");
             } else {
-                var message = 'Ok, see you next time!';
+                var message = 'Great, what to do next?';
                 if (isVoiceOn(session)) tts.Synthesize(message);
                 session.endConversation(message);
             }
@@ -496,7 +496,7 @@ exports.startDialog = function (bot) {
     
     bot.dialog('Cancel', [
         function (session, args, next) {
-            var message = 'Ok, see you next time!';
+            var message = 'Great, what to do next?';
             if (isVoiceOn(session)) tts.Synthesize(message);
             session.endConversation(message);
         }
