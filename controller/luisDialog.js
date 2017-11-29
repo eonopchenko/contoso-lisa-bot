@@ -4,6 +4,7 @@ var md5 = require('MD5');
 var account = require('./account.js');
 var branch = require('./branch.js');
 var currency = require('./currency.js');
+var tts = require('./TTSService.js');  
 
 var username = '';
 var password = '';
@@ -14,6 +15,10 @@ exports.setUsername = function(data) {
 
 exports.setPassword = function(data) {
     password = data;
+}
+
+exports.getUsername = function(data) {
+    return username;
 }
 
 const optionsFull = ['First Name', 'Last Name', 'Email', 'Telephone', 'Password', 'Birth Date'];
@@ -38,6 +43,10 @@ function isConversationDataSet(session, id) {
     return (session.conversationData[id] != null) && (session.conversationData[id] != undefined) && (session.conversationData[id] != "");
 }
 
+function isVoiceOn(session) {
+    return (session.userData["voice"] != null) && (session.userData["voice"] != undefined) && (session.userData["voice"] != "") && (session.userData["voice"] != "off");
+}
+
 function buildNewAccountJSON(session) {
     return '{' + 
     '"username": "' + username + '",' + 
@@ -55,18 +64,46 @@ exports.startDialog = function (bot) {
     var recognizer = new builder.LuisRecognizer('https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/d3b35771-e7bd-46fb-83c3-d58c28897e26?subscription-key=81c2b5daa58b4f9fa8a5e7ff4d5591a7&timezoneOffset=0&q=');
 
     bot.recognizer(recognizer);
-    
+
+    bot.dialog('VoiceOn', [
+        function (session, args, next) {
+            session.userData["voice"] = 'on';
+            var message = 'Voice synthesizer is on.';
+            tts.Synthesize(message);
+            session.send(message);
+        }
+    ]).triggerAction({
+        matches: 'VoiceOn'
+    });
+
+    bot.dialog('VoiceOff', [
+        function (session, args, next) {
+            session.userData["voice"] = 'off';
+            var message = 'Voice synthesizer is off.';
+            tts.Synthesize(message);
+            session.send(message);
+        }
+    ]).triggerAction({
+        matches: 'VoiceOff'
+    });
+
     bot.dialog('Welcome', [
         function (session, args, next) {
             session.dialogData.args = args || {};
             if(username === '') {
-                builder.Prompts.text(session, 'Please, enter your user name:');
+                var message = 'Let\'s get acquainted. Please, enter your user name:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
-                session.send('Welcome back, ' + username + '.');
+                var message = 'Welcome back, ' + username + '.';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                session.send(message);
                 if(password === '') {
                     next();
                 } else {
-                    session.endConversation('Great, what to do next?');
+                    var message = 'Great, what to do next?';
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.endConversation(message);
                 }
             }
         },
@@ -82,13 +119,18 @@ exports.startDialog = function (bot) {
                 } else {
                     if(pwd !== '') {
                         password = pwd;
-                        builder.Prompts.text(session, 'Please, enter your account password:');
+                        var message = 'Please, enter your account password:';
+                        if (isVoiceOn(session)) tts.Synthesize(message);
+                        builder.Prompts.text(session, message);
                     } else {
+                        var message1 = 'Sorry, no account information has been found.';
+                        var message2 = 'Do you want to create a new account?';
+                        if (isVoiceOn(session)) tts.Synthesize(message1 + ' ' + message2);
                         choiceRequest(
                             session, 
                             ['Yes', 'No'], 
-                            'Sorry, no account information has been found.', 
-                            'Do you want to create a new account?');
+                            message1, 
+                            message2);
                     }
                 }
             });
@@ -100,9 +142,13 @@ exports.startDialog = function (bot) {
                 }
             } else {
                 if (password === md5(results.response)) {
-                    session.endConversation('Great, what to do next?');
+                    var message = 'Great, what to do next?';
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.endConversation(message);
                 } else {
-                    session.send('Sorry, but it seems like the entered password is incorrect. Please, try once again.');
+                    var message = 'Sorry, but it seems like the entered password is incorrect. Please, try once again.';
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.send(message);
                     session.replaceDialog('Welcome');
                 }
             }
@@ -120,13 +166,18 @@ exports.startDialog = function (bot) {
                 if (error) {
                 } else {
                     if(balance == -1) {
+                        var message1 = 'Sorry, no account information has been found.';
+                        var message2 = 'Do you want to create a new account?';
+                        if (isVoiceOn(session)) tts.Synthesize(message1 + ' ' + message2);
                         choiceRequest(
                             session, 
                             ['Yes', 'No'], 
-                            'Sorry, no account information has been found.', 
-                            'Do you want to create a new account?');
+                            message1, 
+                            message2);
                     } else {
-                        session.endConversation(username + ", your balance is $" + balance + ".");
+                        var message = username + ", your balance is $" + balance + "."
+                        if (isVoiceOn(session)) tts.Synthesize(message);
+                        session.endConversation(message);
                     }
                 }
             });
@@ -135,7 +186,9 @@ exports.startDialog = function (bot) {
             if(results.response.entity === 'Yes') {
                 session.replaceDialog("CreateAccount");
             } else {
-                session.endConversation("Ok, see you next time!");
+                var message = 'Ok, see you next time!';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                session.endConversation(message);
             }
             
         }
@@ -146,7 +199,9 @@ exports.startDialog = function (bot) {
     bot.dialog('CreateAccount', [
         function (session, args, next) {
             if (username === '') {
-                builder.Prompts.text(session, 'Please, enter your user name:');
+                var message = 'Please, enter your user name:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -156,7 +211,9 @@ exports.startDialog = function (bot) {
                 username = results.response;
             }
             if(!isConversationDataSet(session, "firstname")) {
-                builder.Prompts.text(session, 'Please, enter your first name:');
+                var message = 'Please, enter your first name:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -167,7 +224,9 @@ exports.startDialog = function (bot) {
                 session.conversationData["firstname"] = results.response;
             }
             if(!isConversationDataSet(session, "lastname")) {
-                builder.Prompts.text(session, 'Please, enter your last name:');
+                var message = 'Please, enter your last name:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -177,7 +236,9 @@ exports.startDialog = function (bot) {
                 session.conversationData["lastname"] = results.response;
             }
             if (!isConversationDataSet(session, "email")) {
-                builder.Prompts.text(session, 'Please, enter your email address:');
+                var message = 'Please, enter your email address:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -187,7 +248,9 @@ exports.startDialog = function (bot) {
                 session.conversationData["email"] = results.response;
             }
             if (!isConversationDataSet(session, "telephone")) {
-                builder.Prompts.text(session, 'Please, enter your telephone number:');
+                var message = 'Please, enter your telephone number:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -197,7 +260,9 @@ exports.startDialog = function (bot) {
                 session.conversationData["telephone"] = results.response;
             }
             if(!isConversationDataSet(session, "password1")) {
-                builder.Prompts.text(session, 'Please, enter your account password:');
+                var message = 'Please, enter your account password:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -207,7 +272,9 @@ exports.startDialog = function (bot) {
                 session.conversationData["password1"] = results.response;
             }
             if(!isConversationDataSet(session, "password2")) {
-                builder.Prompts.text(session, 'Please, confirm your account password:');
+                var message = 'Please, confirm your account password:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -219,14 +286,18 @@ exports.startDialog = function (bot) {
                     session.conversationData["password2"] = results.response;
                 } else {
                     session.conversationData["password1"] = "";
-                    session.send("Your confirmation must be the same as password.");
+                    var message = 'Your confirmation must be the same as password.';
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.send(message);
                     session.replaceDialog("CreateAccount");
                     success = false;
                 }
             }
             if(success) {
                 if(!isConversationDataSet(session, "birthdate")) {
-                    builder.Prompts.text(session, 'Please, enter your birth date:');
+                    var message = 'Please, enter your birth date:';
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    builder.Prompts.text(session, message);
                 } else {
                     next();
                 }
@@ -244,7 +315,9 @@ exports.startDialog = function (bot) {
                     session.endConversation("Error occurred during account creation!");
                 } else {
                     password = md5(session.conversationData["password1"]);
-                    session.endConversation(username + ", your account has been successfully created!");
+                    var message = username + ', your account has been successfully created!';
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.endConversation(message);
                 }
             });
         }
@@ -259,9 +332,13 @@ exports.startDialog = function (bot) {
 
             account.deleteAccount(username, function (error, id) {
                 if(error) {
-                    session.endConversation("Error occurred during account deletion!");
+                    var message = 'Error occurred during account deletion!'
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.endConversation(message);
                 } else {
-                    session.endConversation(username + ", your account has been successfully removed!");
+                    var message = username + ', your account has been successfully removed!'
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.endConversation(message);
                     username = '';
                     password = '';
                 }
@@ -280,22 +357,29 @@ exports.startDialog = function (bot) {
                 if (error) {
                 } else {
                     session.conversationData["id"] = id;
+                    var message1 = username + ', what field would you like to update?';
+                    var message2 = 'Please, select one option.';
+                    if (isVoiceOn(session)) tts.Synthesize(message1 + ' ' + message2);
                     choiceRequest(
                         session, 
                         optionsFull, 
-                        username + ', what field would you like to update?', 
-                        'Do you want to create a new account?');
+                        message1, 
+                        message2);
                 }
             });
         }, 
         function (session, results, next) {
             session.conversationData["toupdate"] = optionsBrief[optionsFull.indexOf(results.response.entity)];
-            builder.Prompts.text(session, 'Please, enter a new value of ' + results.response.entity + ":");
+            var message = 'Please, enter a new value of ' + results.response.entity + ':';
+            if (isVoiceOn(session)) tts.Synthesize(message);
+            builder.Prompts.text(session, message);
         }, 
         function (session, results, next) {
             session.conversationData["newvalue"] = results.response;
             if(session.conversationData["toupdate"] == "password") {
-                builder.Prompts.text(session, 'Please, confirm your account password:');
+                var message = 'Please, confirm your account password:';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                builder.Prompts.text(session, message);
             } else {
                 next();
             }
@@ -304,13 +388,17 @@ exports.startDialog = function (bot) {
             var toupdate = session.conversationData["toupdate"];
             var newvalue = session.conversationData["newvalue"];
             if((toupdate == "password") && (newvalue != results.response)) {
-                session.send("Your confirmation must be the same as password.");
+                var message = 'Your confirmation must be the same as password.';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                session.send(message);
                 session.replaceDialog("UpdateAccount");
             } else {
                 account.update(session.conversationData["id"], '{"' + toupdate + '": "' + (toupdate === "password" ? md5(newvalue) : newvalue) + '"}', function (error) {
                     if (error) {
                     } else {
-                        session.endConversation(username + ", your account has been successfully updated!");
+                        var message = username + ', your account has been successfully updated!';
+                        if (isVoiceOn(session)) tts.Synthesize(message);
+                        session.endConversation(message);
                     }
                 });
                 
@@ -349,10 +437,14 @@ exports.startDialog = function (bot) {
                         .attachmentLayout(builder.AttachmentLayout.carousel)
                         .attachments(attachment);
                     session.send(message);
-                    session.endConversation("Interbank exchange rate as of " + ratelist.date + " is " + ratelist.rates[tobuy] + " " + tobuy + " for 1 " + tosell + ".");
+                    var message = 'Interbank exchange rate as of ' + ratelist.date + ' is ' + ratelist.rates[tobuy] + ' ' + tobuy + ' for 1 ' + tosell + '.';
+                    if (isVoiceOn(session)) tts.Synthesize(message);
+                    session.endConversation(message);
                 });
             } else {
-                session.endConversation("Sorry, currency not recognized!");
+                var message = 'Sorry, currency is not recognized!';
+                if (isVoiceOn(session)) tts.Synthesize(message);
+                session.endConversation(message);
             }
         }
     ]).triggerAction({
@@ -400,5 +492,15 @@ exports.startDialog = function (bot) {
         }
     ]).triggerAction({
         matches: 'GetBranches'
+    });
+    
+    bot.dialog('Cancel', [
+        function (session, args, next) {
+            var message = 'Ok, see you next time!';
+            if (isVoiceOn(session)) tts.Synthesize(message);
+            session.endConversation(message);
+        }
+    ]).triggerAction({
+        matches: 'Cancel'
     });
 }

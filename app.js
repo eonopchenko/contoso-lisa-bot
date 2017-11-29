@@ -27,8 +27,6 @@ server.post('/api/messages', connector.listen());
 * For samples and documentation, see: https://github.com/Microsoft/BotBuilder-Azure
 * ---------------------------------------------------------------------------------------- */
 
-var instructions = 'Welcome!';
-
 // Create your bot with a function to receive messages from the user
 var bot = new builder.UniversalBot(connector, function (session) {
     var reply = new builder.Message().address(session.message.address);
@@ -53,9 +51,10 @@ bot.on('conversationUpdate', function (activity) {
     if (activity.membersAdded) {
         activity.membersAdded.forEach(function (identity) {
             if (identity.id === activity.address.bot.id) {
+                var username = luis.getUsername();
                 var reply = new builder.Message()
                     .address(activity.address)
-                    .text(instructions);
+                    .text(username === '' ? 'Hi, my name is Lisa!' : 'Welcome back, ' + username + ', nice to see you again!');
                 bot.send(reply);
             }
         });
