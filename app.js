@@ -54,7 +54,7 @@ bot.on('conversationUpdate', function (activity) {
                 var username = luis.getUsername();
                 var reply = new builder.Message()
                     .address(activity.address)
-                    .text(username === '' ? 'Hi, my name is Lisa!' : 'Welcome back, ' + username + ', nice to see you again!');
+                    .text((username === '') ? ('Hi, my name is Lisa!') : ('Welcome back, ' + username + ', nice to see you again!'));
                 bot.send(reply);
             }
         });
